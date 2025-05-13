@@ -1,0 +1,104 @@
+﻿# ========================
+# Build Sonuçları
+# ========================
+bin/
+obj/
+[Bb]uild/
+[Ll]ogs/
+*.log
+*.tlog
+
+# ========================
+# Visual Studio Ayarları
+# ========================
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ========================
+# .NET
+# ========================
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.dbmdl
+*.bak
+*.backup
+*.cache
+*.pdb
+*.mdb
+
+# Kullanıcı gizli ayarları
+secrets.json
+**/secrets.json
+appsettings.*.local.json
+
+# ========================
+# Paketler ve NuGet
+# ========================
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+PackageOutput/
+
+# ========================
+# Yayınlama ve Yayın Ayarları
+# ========================
+publish/
+*.publish.xml
+*.publishsettings
+
+# ========================
+# Test Sonuçları
+# ========================
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+*.testsettings
+
+# ========================
+# Veritabanı
+# ========================
+*.mdf
+*.ldf
+*.ndf
+*.db
+
+# ========================
+# Dump ve Geçici Dosyalar
+# ========================
+*.tmp
+*.temp
+*.dmp
+
+# ========================
+# IDE/Editor Özel Ayarları
+# ========================
+*.vsconfig
+*.DotSettings.user
+*.sln.ide
+
+# ========================
+# ReSharper / Rider
+# ========================
+_ReSharper*/
+*.ReSharper
+.idea/
+*.sln.iml
+
+# ========================
+# OS Tabanlı Dosyalar
+# ========================
+*.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ========================
+# Ortam Değişkenleri (.env)
+# ========================
+.env
