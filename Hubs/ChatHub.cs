@@ -1,13 +1,39 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using ChatApp.Data.Repository;
+using ChatApp.Events;
+using ChatApp.Models;
+using Microsoft.AspNetCore.SignalR;
+using Serilog;
 
 namespace ChatApp.Hubs
 {
     public class ChatHub : Hub
     {
+        private readonly IMessageRepository _messageRepository;
+
+        public ChatHub(IMessageRepository messageRepository)
+        {
+            _messageRepository = messageRepository;
+        }
 
         public async Task SendMessage(string user, string message)
         {
-            await Clients.All.SendAsync(user, message);
+            await Clients.All.SendAsync("ReceiveMessage",user, message);
+
+            await _messageRepository.CreateMessageAsync(
+                new Message
+                {
+                    Content = message,
+                    Sender = user
+                }
+            );
+
+            MessageSentEvent messageSentEvent = new MessageSentEvent
+            {
+                Content = message
+            };
+
+            Log.Information("MessageSentEvent: {@Event}", messageSentEvent);
+
         }
     }
 }

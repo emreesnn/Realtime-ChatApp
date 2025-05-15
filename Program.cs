@@ -1,21 +1,28 @@
+using ChatApp.Data;
+using ChatApp.Data.Repository;
 using ChatApp.Hubs;
+using ChatApp.Services;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 // Add services to the container.
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddControllers();
 
 //Serilog
 Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
     .WriteTo.Console()
     .CreateLogger();
 
 builder.Host.UseSerilog();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
@@ -32,12 +39,6 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.MapGet("/", () =>
-{
-    Log.Information("Anasayfa açýldý"); // Log kaydý (Bilgilendirme seviyesi)
-    return "Merhaba dünya!";
-});
 
 app.MapHub<ChatHub>("/chatHub");
 
