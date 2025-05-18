@@ -1,5 +1,6 @@
 using ChatApp.Data;
 using ChatApp.Data.Repository;
+using ChatApp.Events;
 using ChatApp.Hubs;
 using ChatApp.Services;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IEventPublisher, ConsoleEventPublisher>();
+builder.Services.AddScoped<IMessageEventRouter, MessageEventRouter>();
+
+
 
 builder.Services.AddControllers();
 
@@ -29,6 +34,15 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
+    });
+});
+
+app.UseCors();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

@@ -9,10 +9,12 @@ namespace ChatApp.Hubs
     public class ChatHub : Hub
     {
         private readonly IMessageRepository _messageRepository;
+        private readonly IMessageEventRouter _messageEventRouter;
 
-        public ChatHub(IMessageRepository messageRepository)
+        public ChatHub(IMessageRepository messageRepository, IMessageEventRouter messageEventRouter)
         {
             _messageRepository = messageRepository;
+            _messageEventRouter = messageEventRouter;
         }
 
         public async Task SendMessage(string user, string message)
@@ -32,7 +34,7 @@ namespace ChatApp.Hubs
                 Content = message
             };
 
-            Log.Information("MessageSentEvent: {@Event}", messageSentEvent);
+            await _messageEventRouter.RouteAsync(messageSentEvent);
 
         }
     }

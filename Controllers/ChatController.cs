@@ -17,7 +17,7 @@ namespace ChatApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetHistory(string url)
+        public async Task<IActionResult> GetHistory()
         {
             //TODO: Set a limit - try to optimize - get for an sender or group
             List<Message> messages =  await _messageService.GetAllMessagesAsync();
