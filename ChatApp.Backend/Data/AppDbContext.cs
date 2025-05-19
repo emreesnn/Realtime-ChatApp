@@ -6,7 +6,7 @@ namespace ChatApp.Data
     public class AppDbContext : DbContext
     {
 
-        public DbSet<Message> Message { get; set; }
+        public DbSet<Message> Messages { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
          : base(options)

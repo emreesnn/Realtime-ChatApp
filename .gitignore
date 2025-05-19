@@ -91,6 +91,22 @@ _ReSharper*/
 *.sln.iml
 
 # ========================
+# Blazor WebAssembly / Frontend
+# ========================
+**/bin/
+**/obj/
+**/wwwroot/css/app.css
+**/wwwroot/css/bootstrap/
+**/wwwroot/js/
+**/wwwroot/*.map
+**/wwwroot/*.gz
+**/wwwroot/*.br
+
+# NPM modülleri (eğer frontend projede varsa)
+node_modules/
+
+
+# ========================
 # OS Tabanlı Dosyalar
 # ========================
 *.DS_Store
@@ -101,4 +117,4 @@ Desktop.ini
 # ========================
 # Ortam Değişkenleri (.env)
 # ========================
-.env
+.env*

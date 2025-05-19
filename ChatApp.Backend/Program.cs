@@ -32,8 +32,6 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
 
-var app = builder.Build();
-
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -41,6 +39,9 @@ builder.Services.AddCors(options =>
         policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
     });
 });
+
+
+var app = builder.Build();
 
 app.UseCors();
 // Configure the HTTP request pipeline.
