@@ -16,6 +16,15 @@ namespace ChatApp.Data.Repository
         {
             return await _context.Messages.ToListAsync();
         }
+        public async Task<List<Message>> GetConversationAsync(string currentUser, string targetUser)
+        {
+            return await _context.Messages
+                .Where(m =>
+                   (m.Sender == currentUser && m.Receiver == targetUser) ||
+                   (m.Sender == targetUser && m.Receiver == currentUser))
+                .OrderBy(m => m.Timestamp)
+                .ToListAsync();
+        }
 
         public async Task<Message> GetById(int messageId)
         {

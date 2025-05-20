@@ -5,6 +5,7 @@ namespace ChatApp.Data.Repository
     public interface IMessageRepository
     {
         Task<List<Message>> GetAll();
+        Task<List<Message>> GetConversationAsync(string currentUser, string targetUser);
         Task<Message> GetById(int messageId);
         Task<Message> GetBySender(string sender);
         Task<bool> CreateMessageAsync(Message message);

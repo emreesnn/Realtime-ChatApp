@@ -24,7 +24,26 @@ namespace ChatApp.Controllers
 
             var messageHistory = messages.Select(m => new MessageHistory
             {
-                Sender = m.Sender,
+                SenderName = m.Sender,
+                ReceiverName = m.Receiver,
+                Content = m.Content,
+                Timestamp = m.Timestamp
+            }).ToList();
+
+            return Ok(messageHistory);
+
+        }
+        
+        [HttpGet]
+        public async Task<IActionResult> GetConversationWithUser(string targetUser)
+        {
+            var currentUser = "user1";
+            List<Message> messages =  await _messageService.GetAllMessagesAsync();
+
+            var messageHistory = messages.Select(m => new MessageHistory
+            {
+                SenderName = m.Sender,
+                ReceiverName = m.Receiver,
                 Content = m.Content,
                 Timestamp = m.Timestamp
             }).ToList();

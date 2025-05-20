@@ -37,5 +37,29 @@ namespace ChatApp.Hubs
             await _messageEventRouter.RouteAsync(messageSentEvent);
 
         }
+        
+        public async Task SendPrivateMessage(string receiver, string message)
+        {
+            var from = Context.User?.Identity?.Name ?? "anonymous";
+
+            await _messageRepository.CreateMessageAsync(new Message
+            {
+                Sender = from,
+                Receiver = receiver,
+                Content = message,
+                Timestamp = DateTime.UtcNow
+            });
+
+            MessageSentEvent messageSentEvent = new MessageSentEvent
+            {
+                Content = message
+            };
+
+            await _messageEventRouter.RouteAsync(messageSentEvent);
+            await Clients.User(receiver).SendAsync("ReceiveMessage",from, message);
+
+        }
+
+
     }
 }

@@ -16,6 +16,10 @@ namespace ChatApp.Services
         {
             return await _messageRepository.GetAll();
         }
+        public async Task<List<Message>> GetConversationAsync(string currentUser, string targetUser)
+        {
+            return await _messageRepository.GetConversationAsync(currentUser, targetUser);
+        }
 
         public async Task<Message> GetMessageByIdAsync(int messageId)
         {

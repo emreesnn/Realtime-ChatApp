@@ -5,6 +5,7 @@ namespace ChatApp.Services
     public interface IMessageService
     {
         Task<List<Message>> GetAllMessagesAsync();
+        Task<List<Message>> GetConversationAsync(string currentUser, string targetUser);
         Task<Message> GetMessageByIdAsync(int messageId);
         Task<Message> GetMessageBySenderAsync(string sender);
         Task<bool> AddMessageAsync(Message message);
