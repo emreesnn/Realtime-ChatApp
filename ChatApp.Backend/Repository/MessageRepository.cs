@@ -1,7 +1,8 @@
-﻿using ChatApp.Models;
+﻿using ChatApp.Data;
+using ChatApp.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace ChatApp.Data.Repository
+namespace ChatApp.Repository
 {
     public class MessageRepository : IMessageRepository
     {
@@ -16,28 +17,18 @@ namespace ChatApp.Data.Repository
         {
             return await _context.Messages.ToListAsync();
         }
-        public async Task<List<Message>> GetConversationAsync(string currentUser, string targetUser)
+        public async Task<List<Message>> GetConversationAsync(string currentUserName, string targetUserName)
         {
+            if (string.IsNullOrEmpty(currentUserName) || string.IsNullOrEmpty(targetUserName))
+            {
+                throw new BadHttpRequestException("Kullanıcı adı bulunamadı!");
+            }
             return await _context.Messages
                 .Where(m =>
-                   (m.Sender == currentUser && m.Receiver == targetUser) ||
-                   (m.Sender == targetUser && m.Receiver == currentUser))
+                   m.SenderName == currentUserName && m.ReceiverName == targetUserName ||
+                   m.SenderName == targetUserName && m.SenderName == currentUserName)
                 .OrderBy(m => m.Timestamp)
                 .ToListAsync();
-        }
-
-        public async Task<Message> GetById(int messageId)
-        {
-            return await _context.Messages
-                .Where(m => m.Id == messageId)
-                .FirstOrDefaultAsync();
-        }
-
-        public async Task<Message> GetBySender(string sender)
-        {
-            return await _context.Messages
-                .Where(m => m.Sender == sender)
-                .FirstOrDefaultAsync();
         }
 
         public async Task<bool> CreateMessageAsync(Message message)

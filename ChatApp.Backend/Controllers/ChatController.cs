@@ -1,4 +1,4 @@
-﻿using ChatApp.Data.DTO;
+﻿using ChatApp.Dtos;
 using ChatApp.Models;
 using ChatApp.Services;
 using Microsoft.AspNetCore.Http;
@@ -15,35 +15,18 @@ namespace ChatApp.Controllers
         public ChatController(IMessageService messageService) {
             _messageService = messageService;
         }
-
-        [HttpGet]
-        public async Task<IActionResult> GetHistory()
-        {
-            //TODO: Set a limit - try to optimize - get for an sender or group
-            List<Message> messages =  await _messageService.GetAllMessagesAsync();
-
-            var messageHistory = messages.Select(m => new MessageHistory
-            {
-                SenderName = m.Sender,
-                ReceiverName = m.Receiver,
-                Content = m.Content,
-                Timestamp = m.Timestamp
-            }).ToList();
-
-            return Ok(messageHistory);
-
-        }
         
         [HttpGet]
-        public async Task<IActionResult> GetConversationWithUser(string targetUser)
+        public async Task<IActionResult> GetConversationWithUser(string currentUserName, string targetUserName)
         {
-            var currentUser = "user1";
-            List<Message> messages =  await _messageService.GetAllMessagesAsync();
 
-            var messageHistory = messages.Select(m => new MessageHistory
+
+            List<Message> messages =  await _messageService.GetConversationAsync(currentUserName, targetUserName);
+
+            var messageHistory = messages.Select(m => new MessageDto
             {
-                SenderName = m.Sender,
-                ReceiverName = m.Receiver,
+                SenderName = m.SenderName,
+                ReceiverName = m.ReceiverName,
                 Content = m.Content,
                 Timestamp = m.Timestamp
             }).ToList();

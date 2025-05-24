@@ -3,9 +3,14 @@
     public class Message
     {
         public int Id { get; set; }
-        public string Sender { get; set; }
-        public string Receiver { get; set; }
-        public string Content { get; set; }
+
+        public Guid SenderId { get; set; }
+        public string SenderName { get; set; } = string.Empty;
+
+        public Guid ReceiverId { get; set; }
+        public string ReceiverName { get; set; } = string.Empty;
+
+        public string Content { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 

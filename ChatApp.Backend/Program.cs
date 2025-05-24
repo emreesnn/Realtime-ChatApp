@@ -1,7 +1,6 @@
 using ChatApp.Data;
-using ChatApp.Data.Repository;
-using ChatApp.Events;
 using ChatApp.Hubs;
+using ChatApp.Repository;
 using ChatApp.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -11,9 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<IEventPublisher, ConsoleEventPublisher>();
-builder.Services.AddScoped<IMessageEventRouter, MessageEventRouter>();
 
 
 

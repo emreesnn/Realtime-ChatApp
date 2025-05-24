@@ -1,5 +1,5 @@
-﻿using ChatApp.Data.Repository;
-using ChatApp.Models;
+﻿using ChatApp.Models;
+using ChatApp.Repository;
 
 namespace ChatApp.Services
 {
@@ -19,16 +19,6 @@ namespace ChatApp.Services
         public async Task<List<Message>> GetConversationAsync(string currentUser, string targetUser)
         {
             return await _messageRepository.GetConversationAsync(currentUser, targetUser);
-        }
-
-        public async Task<Message> GetMessageByIdAsync(int messageId)
-        {
-            return await _messageRepository.GetById(messageId);
-        }
-
-        public async Task<Message> GetMessageBySenderAsync(string sender)
-        {
-            return await _messageRepository.GetBySender(sender);
         }
 
         public async Task<bool> AddMessageAsync(Message message)

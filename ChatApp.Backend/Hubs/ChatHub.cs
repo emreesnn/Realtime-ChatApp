@@ -1,6 +1,5 @@
-﻿using ChatApp.Data.Repository;
-using ChatApp.Events;
-using ChatApp.Models;
+﻿using ChatApp.Models;
+using ChatApp.Repository;
 using Microsoft.AspNetCore.SignalR;
 using Serilog;
 
@@ -9,54 +8,59 @@ namespace ChatApp.Hubs
     public class ChatHub : Hub
     {
         private readonly IMessageRepository _messageRepository;
-        private readonly IMessageEventRouter _messageEventRouter;
+        private readonly IUserRepository _userRepository;
 
-        public ChatHub(IMessageRepository messageRepository, IMessageEventRouter messageEventRouter)
+        public ChatHub(IMessageRepository messageRepository, IUserRepository userRepository)
         {
             _messageRepository = messageRepository;
-            _messageEventRouter = messageEventRouter;
+            _userRepository = userRepository;
         }
 
-        public async Task SendMessage(string user, string message)
+        public static Dictionary<string, Guid> Users = new();
+        public async Task Connect(Guid userId)
         {
-            await Clients.All.SendAsync("ReceiveMessage",user, message);
+            Users.Add(Context.ConnectionId, userId);
+            User? user = await _userRepository.GetByIdAsync(userId);
+            user.IsOnline = true;
+            await _userRepository.UpdateUserAsync(user, userId);
 
-            await _messageRepository.CreateMessageAsync(
-                new Message
-                {
-                    Content = message,
-                    Sender = user
-                }
-            );
-
-            MessageSentEvent messageSentEvent = new MessageSentEvent
-            {
-                Content = message
-            };
-
-            await _messageEventRouter.RouteAsync(messageSentEvent);
-
+            await Clients.All.SendAsync("Users", user);
+            
         }
-        
-        public async Task SendPrivateMessage(string receiver, string message)
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var from = Context.User?.Identity?.Name ?? "anonymous";
+            Guid userId;
+            Users.TryGetValue(Context.ConnectionId, out userId);
+            Users.Remove(Context.ConnectionId);
+
+            User? user = await _userRepository.GetByIdAsync(userId);
+            user.IsOnline = true;
+            await _userRepository.UpdateUserAsync(user, userId);
+
+            await Clients.All.SendAsync("Users", user);
+        }
+
+        public async Task SendPrivateMessage(string userId, string targetId, string message)
+        {
+
+            Guid currentUserId = Guid.Parse(userId);
+            Guid targetUserId = Guid.Parse(targetId);
+            
+            User currentUser = await _userRepository.GetByIdAsync(currentUserId);
+            User targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
             await _messageRepository.CreateMessageAsync(new Message
             {
-                Sender = from,
-                Receiver = receiver,
+                SenderId = currentUserId,
+                SenderName = currentUser.Name,
+                ReceiverId = currentUserId,
+                ReceiverName = targetUser.Name,
                 Content = message,
                 Timestamp = DateTime.UtcNow
             });
 
-            MessageSentEvent messageSentEvent = new MessageSentEvent
-            {
-                Content = message
-            };
-
-            await _messageEventRouter.RouteAsync(messageSentEvent);
-            await Clients.User(receiver).SendAsync("ReceiveMessage",from, message);
+            await Clients.User(userId).SendAsync("ReceiveMessage",targetId, message);
 
         }
 

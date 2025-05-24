@@ -6,8 +6,6 @@ namespace ChatApp.Services
     {
         Task<List<Message>> GetAllMessagesAsync();
         Task<List<Message>> GetConversationAsync(string currentUser, string targetUser);
-        Task<Message> GetMessageByIdAsync(int messageId);
-        Task<Message> GetMessageBySenderAsync(string sender);
         Task<bool> AddMessageAsync(Message message);
         Task<bool> UpdateMessageContentAsync(int id, string content);
         Task<bool> DeleteMessageAsync(int id);
