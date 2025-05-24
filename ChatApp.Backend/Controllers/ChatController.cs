@@ -19,8 +19,6 @@ namespace ChatApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetConversationWithUser(string currentUserName, string targetUserName)
         {
-
-
             List<Message> messages =  await _messageService.GetConversationAsync(currentUserName, targetUserName);
 
             var messageHistory = messages.Select(m => new MessageDto

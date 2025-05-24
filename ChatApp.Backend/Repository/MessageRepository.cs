@@ -26,7 +26,7 @@ namespace ChatApp.Repository
             return await _context.Messages
                 .Where(m =>
                    m.SenderName == currentUserName && m.ReceiverName == targetUserName ||
-                   m.SenderName == targetUserName && m.SenderName == currentUserName)
+                   m.SenderName == targetUserName && m.ReceiverName == currentUserName)
                 .OrderBy(m => m.Timestamp)
                 .ToListAsync();
         }

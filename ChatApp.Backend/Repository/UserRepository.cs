@@ -64,15 +64,9 @@ namespace ChatApp.Repository
                 throw new BadHttpRequestException("Kullanıcı bulunamadı!");
             }
 
-            bool isNameExists = await _context.Users.AnyAsync(u => u.Name == updatedUser.Name);
-
-            if (isNameExists)
-            {
-                throw new BadHttpRequestException("Kullanıcı adı kullanılıyor!");
-            }
-
-            user.Name = updatedUser.Name;
+            //user.Name = updatedUser.Name;
             user.Password = updatedUser.Password;
+            user.IsOnline = updatedUser.IsOnline;
 
             await _context.SaveChangesAsync();
             return true;

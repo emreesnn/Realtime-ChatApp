@@ -1,46 +1,184 @@
 ﻿@page "/chat"
 @using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient Http
+@inject IJSRuntime JS
 
-<h3>Real-Time Chat</h3>
+@if (currentUser == null)
+{
+    <h3>@(isRegistering ? "Register" : "Login")</h3>
+    <input @bind="loginName" placeholder="Username" class="form-control w-25" />
+    <input @bind="loginPassword" type="password" placeholder="Password" class="form-control w-25 mt-2" />
+    <button class="btn btn-primary mt-2" @onclick="(isRegistering ? Register : Login)">
+        @(isRegistering ? "Register" : "Login")
+    </button>
+    <p class="mt-2">
+        <a href="#" @onclick="() => isRegistering = !isRegistering" @onclick:preventDefault="true">
+            @(isRegistering ? "Already have an account? Login" : "New here? Register")
+        </a>
+    </p>
 
-<input @bind="user" placeholder="Your name" />
-<input @bind="message" placeholder="Your message" @onkeydown="HandleEnter" />
-<button @onclick="SendMessage">Send</button>
-
-<ul>
-    @foreach (var msg in messages)
+    @if (!string.IsNullOrEmpty(loginError))
     {
-        <li><b>@msg.User:</b> @msg.Content</li>
+        <div class="text-danger mt-2">@loginError</div>
     }
-</ul>
+}
+else
+{
+    <div class="alert alert-info mb-3">
+        Logged in as: <strong>@currentUser.Name</strong>
+    </div>
+
+    <div class="row">
+        <div class="col-3 border-end">
+            <h5>Online Users</h5>
+            <ul class="list-group">
+                @foreach (var user in onlineUsers.Where(u => u.Id != currentUser.Id))
+                {
+                    <li class="list-group-item list-group-item-action @(selectedUser?.Id == user.Id ? "active" : "")"
+                        @onclick="() => SelectUser(user)">
+                        @user.Name
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="col-9">
+            @if (selectedUser != null)
+            {
+                <h5>Chat with @selectedUser.Name</h5>
+
+                <div class="border p-2 mb-2" style="height: 300px; overflow-y: scroll;" id="chatBox">
+                    @foreach (var msg in messages)
+                    {
+                        <div>
+                            <b>@(msg.SenderName?.ToLower() == currentUser.Name.ToLower() ? "You" : msg.SenderName):</b> @msg.Content
+                        </div>
+                    }
+                </div>
+
+                <div class="input-group">
+                    <input class="form-control" placeholder="Type a message..." @bind="message" @onkeydown="HandleEnter" />
+                    <button class="btn btn-primary" @onclick="SendMessage">Send</button>
+                </div>
+            }
+            else
+            {
+                <p>Select a user to start chatting.</p>
+            }
+        </div>
+    </div>
+}
 
 @code {
-    private HubConnection hubConnection;
-    private string user;
-    private string message;
-    private List<(string User, string Content)> messages = new();
+    private string loginName;
+    private string loginPassword;
+    private string loginError;
+    private bool isRegistering = false;
 
-    protected override async Task OnInitializedAsync()
+    private User currentUser;
+    private HubConnection hubConnection;
+    private List<User> onlineUsers = new();
+    private User selectedUser;
+    private string message;
+    private List<MessageDto> messages = new();
+
+    private async Task Register()
+    {
+        loginError = "";
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Auth/register", new User
+                {
+                    Name = loginName,
+                    Password = loginPassword
+                });
+
+            if (response.IsSuccessStatusCode)
+            {
+                currentUser = await response.Content.ReadFromJsonAsync<User>();
+                await ConnectToSignalR();
+            }
+            else
+            {
+                loginError = "Register failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            loginError = ex.Message;
+        }
+    }
+
+    private async Task Login()
+    {
+        loginError = "";
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Auth/login", new User
+                {
+                    Name = loginName,
+                    Password = loginPassword
+                });
+
+            if (response.IsSuccessStatusCode)
+            {
+                currentUser = await response.Content.ReadFromJsonAsync<User>();
+                await ConnectToSignalR();
+            }
+            else
+            {
+                loginError = "Login failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            loginError = "Error: " + ex.Message;
+        }
+    }
+
+    private async Task ConnectToSignalR()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("http://localhost:5051/chatHub") 
+            .WithUrl("http://localhost:5051/chatHub") // portunu backend'e göre ayarla
             .WithAutomaticReconnect()
             .Build();
 
-        hubConnection.On<string, string>("ReceiveMessage", (user, msg) =>
+        hubConnection.On<User>("Users", user =>
         {
-            messages.Add((user, msg));
-            InvokeAsync(StateHasChanged);
+            var existing = onlineUsers.FirstOrDefault(u => u.Id == user.Id);
+            if (user.IsOnline)
+            {
+                if (existing == null)
+                    onlineUsers.Add(user);
+            }
+            else
+            {
+                onlineUsers.RemoveAll(u => u.Id == user.Id);
+            }
+
+            StateHasChanged();
+        });
+
+        hubConnection.On<string, string>("ReceiveMessage", (sender, msg) =>
+        {
+            messages.Add(new MessageDto
+                {
+                    SenderName = sender,
+                    Content = msg,
+                    Timestamp = DateTime.UtcNow
+                });
+            ScrollToBottom();
+            StateHasChanged();
         });
 
         await hubConnection.StartAsync();
+        await hubConnection.SendAsync("Connect", currentUser.Id);
     }
 
     private async Task SendMessage()
     {
-        if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(message))
+        if (!string.IsNullOrWhiteSpace(message) && selectedUser != null)
         {
-            await hubConnection.SendAsync("SendMessage", user, message);
+            await hubConnection.SendAsync("SendPrivateMessage", currentUser.Id.ToString(), selectedUser.Id.ToString(), message);
             message = "";
         }
     }
@@ -48,5 +186,52 @@
     private async Task HandleEnter(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") await SendMessage();
+    }
+
+    private async void SelectUser(User user)
+    {
+        selectedUser = user;
+        messages.Clear();
+
+        try
+        {
+            var response = await Http.GetAsync($"api/chat/GetConversationWithUser?currentUserName={currentUser.Name}&targetUserName={user.Name}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var history = await response.Content.ReadFromJsonAsync<List<MessageDto>>();
+                if (history != null)
+                {
+                    messages = history;
+                    ScrollToBottom();
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Mesaj geçmişi alınamadı: " + ex.Message);
+        }
+    }
+
+    private async void ScrollToBottom()
+    {
+        await JS.InvokeVoidAsync("eval", "setTimeout(() => { const chat = document.getElementById('chatBox'); if(chat) chat.scrollTop = chat.scrollHeight; }, 100);");
+    }
+
+    public class User
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string? Password { get; set; }
+        public bool IsOnline { get; set; }
+    }
+
+    public class MessageDto
+    {
+        public string SenderName { get; set; }
+        public string ReceiverName { get; set; }
+        public string Content { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }

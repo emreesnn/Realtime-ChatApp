@@ -2,6 +2,7 @@
 using ChatApp.Repository;
 using Microsoft.AspNetCore.SignalR;
 using Serilog;
+using System.Reflection;
 
 namespace ChatApp.Hubs
 {
@@ -19,14 +20,25 @@ namespace ChatApp.Hubs
         public static Dictionary<string, Guid> Users = new();
         public async Task Connect(Guid userId)
         {
-            Users.Add(Context.ConnectionId, userId);
-            User? user = await _userRepository.GetByIdAsync(userId);
+            Users.TryAdd(Context.ConnectionId, userId);
+
+            User user = await _userRepository.GetByIdAsync(userId);
             user.IsOnline = true;
             await _userRepository.UpdateUserAsync(user, userId);
 
             await Clients.All.SendAsync("Users", user);
-            
+
+            var allOnlineUsers = await _userRepository.GetAllAsync();
+            var othersOnline = allOnlineUsers
+                .Where(u => u.Id != user.Id && u.IsOnline)
+                .ToList();
+
+            foreach (var other in othersOnline)
+            {
+                await Clients.Caller.SendAsync("Users", other);
+            }
         }
+
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
@@ -35,7 +47,7 @@ namespace ChatApp.Hubs
             Users.Remove(Context.ConnectionId);
 
             User? user = await _userRepository.GetByIdAsync(userId);
-            user.IsOnline = true;
+            user.IsOnline = false;
             await _userRepository.UpdateUserAsync(user, userId);
 
             await Clients.All.SendAsync("Users", user);
@@ -50,17 +62,23 @@ namespace ChatApp.Hubs
             User currentUser = await _userRepository.GetByIdAsync(currentUserId);
             User targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
+
+
             await _messageRepository.CreateMessageAsync(new Message
             {
                 SenderId = currentUserId,
                 SenderName = currentUser.Name,
-                ReceiverId = currentUserId,
+                ReceiverId = targetUserId,
                 ReceiverName = targetUser.Name,
                 Content = message,
                 Timestamp = DateTime.UtcNow
             });
 
-            await Clients.User(userId).SendAsync("ReceiveMessage",targetId, message);
+            var senderConnectionId = Users.FirstOrDefault(x => x.Value == currentUserId).Key;
+            var receiverConnectionId = Users.FirstOrDefault(x => x.Value == targetUserId).Key;
+
+            await Clients.Clients(senderConnectionId, receiverConnectionId)
+                .SendAsync("ReceiveMessage", currentUser.Name, message);
 
         }
 
